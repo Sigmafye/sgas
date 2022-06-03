@@ -25,7 +25,7 @@ from architect import Architect
 from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser("modelnet")
-parser.add_argument('--data', type=str, default='../../data', help='location of the data corpus')
+parser.add_argument('--data', type=str, default='../../../data', help='location of the data corpus')
 parser.add_argument('--batch_size', type=int, default=28, help='batch size')
 parser.add_argument('--batch_increase', default=4, type=int,
                     help='how much does the batch size increase after making a decision')

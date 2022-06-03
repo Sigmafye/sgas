@@ -20,12 +20,12 @@ import torchvision.utils as vutils
 
 from model_search import Network
 from architect import Architect
-from tensorboardX import SummaryWriter
-
+# from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 # torch_geometric.set_debug(True)
 parser = argparse.ArgumentParser("ppi")
-parser.add_argument('--data', type=str, default='../../data', help='location of the data corpus')
+parser.add_argument('--data', type=str, default='../../../data', help='location of the data corpus')
 parser.add_argument('--batch_size', type=int, default=6, help='batch size')
 parser.add_argument('--batch_increase', default=1, type=int, help='how much does the batch size increase after making a decision')
 parser.add_argument('--learning_rate', type=float, default=0.005, help='init learning rate')

@@ -2,9 +2,15 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import torch_geometric as tg
+from torch.nn import Parameter
+
+from .scatter_new import scatter_new
 from .torch_nn import MLP, act_layer, norm_layer
 from .torch_edge import DilatedKnnGraph
 from torch_geometric.utils import remove_self_loops, add_self_loops
+from torch_geometric.nn.conv import EdgeConv as _EdgeConv
+from .sageconv import SAGEConv as _SAGEConv
+from torch_geometric.nn.conv import GINConv as _GINConv
 
 
 class MRConv(nn.Module):
@@ -18,11 +24,14 @@ class MRConv(nn.Module):
 
     def forward(self, x, edge_index):
         """"""
-        x_j = tg.utils.scatter_(self.aggr, torch.index_select(x, 0, edge_index[0]) - torch.index_select(x, 0, edge_index[1]), edge_index[1], dim_size=x.shape[0])
+        # x_j = tg.utils.scatter_(self.aggr, torch.index_select(x, 0, edge_index[0]) - torch.index_select(x, 0, edge_index[1]), edge_index[1], dim_size=x.shape[0])
+        x_j = scatter_new(self.aggr, torch.index_select(x, 0, edge_index[0]) - torch.index_select(x, 0, edge_index[1]), edge_index[1], dim_size=x.shape[0])
+        # x_j = torch.scatter(src=(torch.index_select(x, 0, edge_index[0]) - torch.index_select(x, 0, edge_index[1])), index=edge_index[1], dim=0)
         return self.nn(torch.cat([x, x_j], dim=1))
 
 
-class EdgConv(tg.nn.EdgeConv):
+# class EdgConv(tg.nn.EdgeConv):
+class EdgConv(_EdgeConv):
     """
     Edge convolution layer (with activation, batch normalization)
     """
@@ -52,7 +61,8 @@ class GATConv(nn.Module):
         return out
 
 
-class SAGEConv(tg.nn.SAGEConv):
+# class SAGEConv(tg.nn.SAGEConv):
+class SAGEConv(_SAGEConv):
     r"""The GraphSAGE operator from the `"Inductive Representation Learning on
     Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper
 
@@ -88,6 +98,11 @@ class SAGEConv(tg.nn.SAGEConv):
         else:
             super(SAGEConv, self).__init__(in_channels, out_channels, False, bias, **kwargs)
         self.nn = nn
+        # self.weight = Parameter(torch.Tensor(in_channels, out_channels))
+        # if bias:
+        #     self.bias = Parameter(torch.Tensor(out_channels))
+        # else:
+        #     self.register_parameter('bias', None)
 
     def forward(self, x, edge_index, size=None):
         """"""
@@ -101,8 +116,10 @@ class SAGEConv(tg.nn.SAGEConv):
     def message(self, x_i, x_j):
         if self.relative:
             x = torch.matmul(x_j - x_i, self.weight)
+            x = x_j - x_i
         else:
             x = torch.matmul(x_j, self.weight)
+            # x = torch.matmul(x_j, self.weight)
         return x
 
     def update(self, aggr_out, x):
@@ -144,7 +161,8 @@ class SemiGCNConv(nn.Module):
         return out
 
 
-class GinConv(tg.nn.GINConv):
+# class GinConv(tg.nn.GINConv):
+class GinConv(_GINConv):
     """
     Edge convolution layer (with activation, batch normalization)
     """
